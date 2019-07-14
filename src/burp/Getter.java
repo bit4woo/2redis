@@ -175,6 +175,21 @@ public class Getter {
 		IRequestInfo analyzeRequest = helpers.analyzeRequest(messageInfo);
 		return analyzeRequest.getParameters();
 	}
+	
+	public String getMimeType(IHttpRequestResponse messageInfo) {
+		try {
+			IResponseInfo analyzeResponse = helpers.analyzeResponse(messageInfo.getResponse());
+			String MIMEtype = analyzeResponse.getStatedMimeType();
+			if(MIMEtype == null) {
+				MIMEtype = analyzeResponse.getInferredMimeType();
+			}
+			return MIMEtype;
+		} catch (Exception e) {
+			return null;
+			//e.printStackTrace();
+		}
+	}
+
 
 
 	public String getHTTPBasicCredentials(IHttpRequestResponse messageInfo) throws Exception{

@@ -25,6 +25,7 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	public int proxyServerIndex=-1;
 	ConfigGUI gui;
 	Jedis jedis;
+	Getter getter = new Getter(helpers);
 
 
 
@@ -57,8 +58,10 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
 		if (!messageIsRequest) {//当时response的时候再进行存储，以便获取整个请求响应对
 			if (toolFlag == (toolFlag & gui.checkEnabledFor())) {
-				URL url = new Getter(helpers).getURL(messageInfo);
+				URL url = getter.getURL(messageInfo);
+				String mimeType = getter.getMimeType(messageInfo);
 				if (Util.uselessExtension(url.getPath())) return;
+				if (mimeType.equalsIgnoreCase("image")) return;
 				//if ((config.isOnlyForScope() && callbacks.isInScope(url))|| !config.isOnlyForScope()) {
 				if (!gui.config.isOnlyForScope()||callbacks.isInScope(url)){
 					try {

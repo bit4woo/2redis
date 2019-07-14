@@ -19,7 +19,7 @@ public class Util {
 	}
 	
 	public static boolean uselessExtension(String urlpath) {
-		List extensionList =Arrays.asList(".gif","jpg","png","css","webp","woff","mp4","mov","","");//这种方式对比set的逐个添加更快吗？
+		List extensionList =Arrays.asList(".gif","jpg","png","css","webp","woff","mp4","mov","otf","");//这种方式对比set的逐个添加更快吗？
 		if (!urlpath.contains(".")) {
 			return false;
 		}

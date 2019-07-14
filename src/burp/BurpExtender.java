@@ -3,15 +3,8 @@ package burp;
 import java.awt.Component;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.util.LinkedHashMap;
 import java.util.List;
 
-import burp.IBurpExtender;
-import burp.IBurpExtenderCallbacks;
-import burp.IExtensionHelpers;
-import burp.IExtensionStateListener;
-import burp.IHttpRequestResponse;
-import burp.IHttpService;
 import redis.clients.jedis.Jedis;
 
 
@@ -31,6 +24,7 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	public IExtensionHelpers helpers;
 	public int proxyServerIndex=-1;
 	ConfigGUI gui;
+	Jedis jedis;
 
 
 
@@ -43,12 +37,14 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 		this.stdout.println(ExtensionName);
 		this.stdout.println(github);
 		
-		ConfigGUI gui= new ConfigGUI();
+		gui= new ConfigGUI();
 
 		callbacks.setExtensionName(this.ExtensionName);
 		callbacks.registerExtensionStateListener(this);
 		callbacks.registerHttpListener(this);
 		callbacks.addSuiteTab(this);
+		
+		jedis = new Jedis("localhost");
 	}
 
 	
@@ -60,39 +56,23 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	@Override
 	public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
 		if (!messageIsRequest) {//当时response的时候再进行存储，以便获取整个请求响应对
-			
-			String message = new LineEntry(messageInfo).ToJson();
-			redisWrite(message);
-//			//add/update/append header
-//			if (toolFlag == (toolFlag & gui.checkEnabledFor())) {
-//				//if ((config.isOnlyForScope() && callbacks.isInScope(url))|| !config.isOnlyForScope()) {
-//				if (!gui.config.isOnlyForScope()||callbacks.isInScope(url)){
-//					try {
-//						String message = new LineEntry(messageInfo).ToJson();
-//						redisWrite(message);
-//					} catch (Exception e) {
-//						stderr.print(e.getStackTrace());
-//					}
-//				}
-//			}
-		}else {//response
-
+			if (toolFlag == (toolFlag & gui.checkEnabledFor())) {
+				URL url = new Getter(helpers).getURL(messageInfo);
+				if (Util.uselessExtension(url.getPath())) return;
+				//if ((config.isOnlyForScope() && callbacks.isInScope(url))|| !config.isOnlyForScope()) {
+				if (!gui.config.isOnlyForScope()||callbacks.isInScope(url)){
+					try {
+						String message = new LineEntry(messageInfo).ToJson();
+						//redisWrite(message);
+						jedis.lpush("RequestResponseList", message);
+						stdout.println("push to redis: "+url.toString());
+					} catch (Exception e) {
+						stderr.print(e.getStackTrace());
+					}
+				}
+			}
 		}
 	}
-	
-    public static void redisWrite(String message) {
-        //连接本地的 Redis 服务
-        Jedis jedis = new Jedis("localhost");
-        stdout.println("连接成功");
-        //存储数据到列表中
-        jedis.lpush("RequestResponseList", message);
-        // 获取存储的数据并输出
-        List<String> list = jedis.lrange("RequestResponseList", 0 ,2);
-        for(int i=0; i<list.size(); i++) {
-        	stdout.println("列表项为: "+list.get(i));
-        }
-    }
-
 
 	public static IBurpExtenderCallbacks getCallbacks() {
 		return callbacks;
@@ -146,14 +126,12 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 
 	@Override
 	public String getTabCaption() {
-		// TODO Auto-generated method stub
 		return "2redis";
 	}
 
 
 	@Override
 	public Component getUiComponent() {
-		// TODO Auto-generated method stub
 		return gui.getContentPane();
 	}
 }

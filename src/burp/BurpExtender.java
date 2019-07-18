@@ -25,7 +25,7 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	public int proxyServerIndex=-1;
 	ConfigGUI gui;
 	Jedis jedis;
-	Getter getter = new Getter(helpers);
+	Getter getter;
 
 
 
@@ -33,6 +33,7 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
 		BurpExtender.callbacks = callbacks;
 		this.helpers = callbacks.getHelpers();
+		this.getter= new Getter(helpers);
 		this.stdout = new PrintWriter(callbacks.getStdout(), true);
 		this.stderr = new PrintWriter(callbacks.getStderr(), true);
 		this.stdout.println(ExtensionName);

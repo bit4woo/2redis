@@ -3,7 +3,10 @@ package burp;
 import java.awt.Component;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import redis.clients.jedis.Jedis;
 
@@ -24,7 +27,7 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	public IExtensionHelpers helpers;
 	public int proxyServerIndex=-1;
 	ConfigGUI gui;
-	Jedis jedis;
+	static Jedis jedis;
 	Getter getter;
 
 
@@ -58,23 +61,73 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	@Override
 	public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
 		if (!messageIsRequest) {//当时response的时候再进行存储，以便获取整个请求响应对
-			if (toolFlag == (toolFlag & gui.checkEnabledFor())) {
-				URL url = getter.getURL(messageInfo);
-				String mimeType = getter.getMimeType(messageInfo);
-				if (Util.uselessExtension(url.getPath())) return;
-				if (mimeType.equalsIgnoreCase("image")) return;
-				//if ((config.isOnlyForScope() && callbacks.isInScope(url))|| !config.isOnlyForScope()) {
-				if (!gui.config.isOnlyForScope()||callbacks.isInScope(url)){
-					try {
-						String message = new LineEntry(messageInfo).ToJson();
-						//redisWrite(message);
-						jedis.lpush("RequestResponseList", message);
-						stdout.println("push to redis: "+url.toString());
-					} catch (Exception e) {
-						stderr.print(e.getStackTrace());
-					}
+			if (toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) {
+				storeToRedis(parser(messageInfo));//TODO 需不需要异步呢？先试试
+			}
+		}
+	}
+	
+	public String getMimeType(IHttpRequestResponse messageInfo) {
+		try {
+			IResponseInfo analyzeResponse = helpers.analyzeResponse(messageInfo.getResponse());
+			String MIMEtype = analyzeResponse.getStatedMimeType();
+			if(MIMEtype == null) {
+				MIMEtype = analyzeResponse.getInferredMimeType();
+			}
+			return MIMEtype;
+		} catch (Exception e) {
+			return null;
+			//e.printStackTrace();
+		}
+	}
+	
+	public CollectEntry parser(IHttpRequestResponse messageInfo) {
+		URL url = getter.getFullURL(messageInfo);
+		String mimeType = getMimeType(messageInfo);
+		int status = getter.getStatusCode(messageInfo);
+		if (Util.uselessExtension(url.getPath())) return null;
+		if (mimeType.equalsIgnoreCase("image")) return null;
+		if (status!=200 && status!=401) return null;
+		
+		String urlwithoutquery = url.toString();
+		if (urlwithoutquery.contains("?")) {
+			urlwithoutquery = urlwithoutquery.substring(0, urlwithoutquery.indexOf("?"));
+		}
+		List<IParameter> paras = getter.getParas(messageInfo);
+		Set<String> paraNames = new HashSet<String>();
+		for (IParameter para:paras) {
+			String name = para.getName();
+			paraNames.add(name);
+		}
+		
+		String path = url.getPath();
+		String[] tmp = path.split("/");
+		Set<String> dirs = new HashSet<String>();
+		String filename = "";
+		for (int i =0;i<tmp.length;i++) {
+			String item = tmp[i];
+			if (!item.equals("")){
+				if (i==tmp.length-1 && path.endsWith("/")) {
+					filename = item;
+				}else {
+					dirs.add(item);
 				}
 			}
+		}
+		
+		return new CollectEntry(urlwithoutquery,dirs,filename,paraNames);
+	}
+	
+	public static void storeToRedis(CollectEntry entry) {
+		String key = entry.getUrl();
+		String item = jedis.get(key);
+		if (null != item) {
+			CollectEntry oldEntry = CollectEntry.fromJson(item);
+			oldEntry.getParameters().addAll(entry.getParameters());
+			//url相同，dirs和filename必然相同，只有参数可能变化。
+			jedis.lpush(key, oldEntry.toJson());
+		}else {
+			jedis.lpush(key, entry.toJson());
 		}
 	}
 
@@ -137,5 +190,16 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	@Override
 	public Component getUiComponent() {
 		return gui.getContentPane();
+	}
+	
+	public static void main(String[] args) {
+		String url = "/admin/queryPageBtn/";
+		System.out.println(url.split("/").length);
+		String[] tmp = url.split("/");
+		for (String aa:tmp) {
+			System.out.println(aa+"111");
+		}
+		
+				
 	}
 }

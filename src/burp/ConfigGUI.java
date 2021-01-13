@@ -97,7 +97,7 @@ public class ConfigGUI extends JFrame {
 		stderr = new PrintWriter(System.out, true);
 
 		///////////////////////HeaderPanel//////////////
-
+		/*
 		JPanel panel = new JPanel();
 		contentPane.add(panel, BorderLayout.NORTH);
 		FlowLayout fl_panel = (FlowLayout) panel.getLayout();
@@ -155,6 +155,7 @@ public class ConfigGUI extends JFrame {
 		JLabel lblNewLabel_display1 = new JLabel(" will be auto updated");
 		panel.add(lblNewLabel_display1);
 
+		 */
 		////////////////////////////////////config area///////////////////////////////////////////////////////
 
 

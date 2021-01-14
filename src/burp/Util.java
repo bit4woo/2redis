@@ -19,11 +19,14 @@ public class Util {
 	}
 	
 	public static boolean uselessExtension(String urlpath) {
-		List extensionList =Arrays.asList(".gif","jpg","png","css","webp","woff","mp4","mov","otf","");//这种方式对比set的逐个添加更快吗？
+		List extensionList =Arrays.asList(".gif",".jpg",".png",".css",".webp",".woff",".mp4",".mov",".otf","");//这种方式对比set的逐个添加更快吗？
+		if (urlpath.contains("?")){
+			urlpath = urlpath.substring(0,urlpath.indexOf("?"));
+		}
 		if (!urlpath.contains(".")) {
 			return false;
 		}
-		String extension = urlpath.substring(urlpath.lastIndexOf("."),urlpath.length()).toLowerCase();
+		String extension = urlpath.substring(urlpath.lastIndexOf("."),urlpath.length()).toLowerCase();//结果包含.
 		if (extension.contains("!")) {//097c10c96aaf3339.jpg!q90!cc_190x150
 			extension = extension.substring(0,extension.indexOf("!"));
 		}
@@ -34,6 +37,8 @@ public class Util {
 	}
 	
 	public static void main(String args[]) {
+		System.out.println(uselessExtension("misc.360buyimg.com/user/passport/1.0.0/css/i/phone-orange.png"));
+		
 		URL test;
 		try {
 			test = new URL("https://img1.360buyimg.com:443/pop/s190x150_jfs/t1/53715/21/4641/67782/5d257edaE61d746ce/097c10c96aaf3339.jpg!q90!cc_190x150?a=111");

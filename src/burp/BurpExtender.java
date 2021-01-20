@@ -98,6 +98,8 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 		url = formateURL(url);
 		String mimeType = getMimeType(messageInfo);
 		int status = getter.getStatusCode(messageInfo);
+		String refer = getter.getHeaderValueOf(true, messageInfo,"Referer");
+		if (null == refer) return null;
 		if (Util.uselessExtension(url.getPath())) return null;
 		if (mimeType.equalsIgnoreCase("image")) return null;
 		if (status!=200 && status!=401) return null;

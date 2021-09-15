@@ -32,6 +32,7 @@ import javax.swing.filechooser.FileFilter;
 import com.alibaba.fastjson.JSON;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
+import javax.swing.JTextField;
 
 public class ConfigGUI extends JFrame {
 
@@ -63,6 +64,7 @@ public class ConfigGUI extends JFrame {
 
 	private JButton RestoreButton;
 	private JPanel panel_1;
+	private JTextField redisServerTextField;
 
 	/**
 	 * Launch the application.
@@ -152,8 +154,13 @@ public class ConfigGUI extends JFrame {
 		chckbx_scope.setSelected(false);
 		panel.add(chckbx_scope);
 
-		JLabel lblNewLabel_display1 = new JLabel(" will be auto updated");
+		JLabel lblNewLabel_display1 = new JLabel(" will be saved to redis server ");
 		panel.add(lblNewLabel_display1);
+		
+		redisServerTextField = new JTextField();
+		panel.add(redisServerTextField);
+		redisServerTextField.setColumns(10);
+		redisServerTextField.setText("127.0.0.1:6379");
 
 		////////////////////////////////////config area///////////////////////////////////////////////////////
 

@@ -60,12 +60,14 @@
 			<artifactId>burp-extender-api</artifactId>
 			<version>1.7.22</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/redis.clients/jedis -->
+
+		<!-- https://mvnrepository.com/artifact/io.lettuce/lettuce-core -->
 		<dependency>
-			<groupId>redis.clients</groupId>
-			<artifactId>jedis</artifactId>
-			<version>3.1.0-m4</version>
+			<groupId>io.lettuce</groupId>
+			<artifactId>lettuce-core</artifactId>
+			<version>5.2.2.RELEASE</version>
 		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
 		<dependency>
 			<groupId>com.alibaba</groupId>

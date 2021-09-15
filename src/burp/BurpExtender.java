@@ -3,9 +3,9 @@ package burp;
 import java.awt.Component;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.util.List;
 
-import redis.clients.jedis.Jedis;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
 
 
 public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionStateListener,ITab {
@@ -24,10 +24,29 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	public IExtensionHelpers helpers;
 	public int proxyServerIndex=-1;
 	ConfigGUI gui;
-	Jedis jedis;
-	Getter getter = new Getter(helpers);
+	RedisClient redisClient;
+	StatefulRedisConnection<String, String> connection;
+	Getter getter;
 
+	private static void flushStd(){
+		try{
+			stdout = new PrintWriter(callbacks.getStdout(), true);
+			stderr = new PrintWriter(callbacks.getStderr(), true);
+		}catch (Exception e){
+			stdout = new PrintWriter(System.out, true);
+			stderr = new PrintWriter(System.out, true);
+		}
+	}
 
+	public static PrintWriter getStdout() {
+		flushStd();//不同的时候调用这个参数，可能得到不同的值
+		return stdout;
+	}
+
+	public static PrintWriter getStderr() {
+		flushStd();
+		return stderr;
+	}
 
 	@Override
 	public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
@@ -37,6 +56,7 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 		this.stderr = new PrintWriter(callbacks.getStderr(), true);
 		this.stdout.println(ExtensionName);
 		this.stdout.println(github);
+		this.getter = new Getter(helpers);
 		
 		gui= new ConfigGUI();
 
@@ -45,13 +65,20 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 		callbacks.registerHttpListener(this);
 		callbacks.addSuiteTab(this);
 		
-		jedis = new Jedis("localhost");
+		
+		redisClient = RedisClient.create("redis://localhost/0");
+		connection = redisClient.connect();
+
+		stdout.println("Connected to Redis");
+		System.out.println("Connected to Redis");
 	}
 
 	
 	@Override
 	public void extensionUnloaded() {
 		callbacks.saveExtensionSetting("knifeconfig", "test");//TODO
+		connection.close();
+		redisClient.shutdown(); 
 	}
 
 	@Override
@@ -66,8 +93,7 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 				if (!gui.config.isOnlyForScope()||callbacks.isInScope(url)){
 					try {
 						String message = new LineEntry(messageInfo).ToJson();
-						//redisWrite(message);
-						jedis.lpush("RequestResponseList", message);
+						connection.sync().set("RequestResponseList", message);//异步方式，提高速度
 						stdout.println("push to redis: "+url.toString());
 					} catch (Exception e) {
 						stderr.print(e.getStackTrace());
@@ -106,19 +132,8 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 		BurpExtender.github = github;
 	}
 
-
-	public static PrintWriter getStdout() {
-		return stdout;
-	}
-
-
 	public static void setStdout(PrintWriter stdout) {
 		BurpExtender.stdout = stdout;
-	}
-
-
-	public static PrintWriter getStderr() {
-		return stderr;
 	}
 
 
@@ -136,5 +151,16 @@ public class BurpExtender implements IBurpExtender,IHttpListener,IExtensionState
 	@Override
 	public Component getUiComponent() {
 		return gui.getContentPane();
+	}
+	
+	public static void main(String args[]) {
+		RedisClient redisClient = RedisClient.create("redis://localhost/0");
+		StatefulRedisConnection<String, String> connection = redisClient.connect();
+
+		System.out.println("Connected to Redis");
+		connection.sync().set("key", "Hello World");
+
+		connection.close();
+		redisClient.shutdown(); 
 	}
 }

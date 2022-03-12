@@ -99,7 +99,7 @@ public class ConfigGUI extends JFrame {
 		stderr = new PrintWriter(System.out, true);
 
 		///////////////////////HeaderPanel//////////////
-
+		/*
 		JPanel panel = new JPanel();
 		contentPane.add(panel, BorderLayout.NORTH);
 		FlowLayout fl_panel = (FlowLayout) panel.getLayout();
@@ -162,6 +162,7 @@ public class ConfigGUI extends JFrame {
 		redisServerTextField.setColumns(10);
 		redisServerTextField.setText("127.0.0.1:6379");
 
+		 */
 		////////////////////////////////////config area///////////////////////////////////////////////////////
 
 

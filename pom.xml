@@ -72,7 +72,7 @@
 		<dependency>
 			<groupId>io.lettuce</groupId>
 			<artifactId>lettuce-core</artifactId>
-			<version>5.2.2.RELEASE</version>
+			<version>6.5.1.RELEASE</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
